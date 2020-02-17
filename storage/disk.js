@@ -34,17 +34,24 @@ DiskStorage.prototype._handleFile = function _handleFile (req, file, cb) {
     that.getFilename(req, file, function (err, filename) {
       if (err) return cb(err)
 
+
+      const hash = crypto.createHash("sha256");
+
       var finalPath = path.join(destination, filename)
       var outStream = fs.createWriteStream(finalPath)
 
       file.stream.pipe(outStream)
       outStream.on('error', cb)
+      file.stream.on("data", data => {
+        hash.update(data)
+      })
       outStream.on('finish', function () {
         cb(null, {
           destination: destination,
           filename: filename,
           path: finalPath,
-          size: outStream.bytesWritten
+          size: outStream.bytesWritten,
+          hash: hash.digest("hex")
         })
       })
     })
